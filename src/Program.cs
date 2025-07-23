@@ -1,6 +1,8 @@
 using System.Net;
 using Azure.Identity;
+using EspnFantasyLeagueHistoryDataLoader.src.Context;
 using Microsoft.Azure.Functions.Worker;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -56,7 +58,7 @@ var host = new HostBuilder()
                 CookieContainer = cookieContainer,
                 UseCookies = true,
             };
-        }); ;
+        });
 
         s.Configure<LoggerFilterOptions>(options =>
         {
@@ -72,6 +74,11 @@ var host = new HostBuilder()
         });
 
         s.AddScoped<DataLoader>();
+
+        s.AddDbContext<XflLeagueHistoryContext>((options) =>
+        {
+            options.UseSqlServer(context.Configuration["DatabaseConnectionString"]);
+        });
     })
     .Build();
 
