@@ -7,8 +7,8 @@ public class Away
     public double gamesBack { get; set; }
     public int losses { get; set; }
     public double percentage { get; set; }
-    public double pointsAgainst { get; set; }
-    public double pointsFor { get; set; }
+    public decimal pointsAgainst { get; set; }
+    public decimal pointsFor { get; set; }
     public int streakLength { get; set; }
     public string streakType { get; set; }
     public int ties { get; set; }
@@ -20,8 +20,8 @@ public class Division
     public double gamesBack { get; set; }
     public int losses { get; set; }
     public double percentage { get; set; }
-    public double pointsAgainst { get; set; }
-    public double pointsFor { get; set; }
+    public decimal pointsAgainst { get; set; }
+    public decimal pointsFor { get; set; }
     public int streakLength { get; set; }
     public string streakType { get; set; }
     public int ties { get; set; }
@@ -45,8 +45,8 @@ public class Home
     public double gamesBack { get; set; }
     public int losses { get; set; }
     public double percentage { get; set; }
-    public double pointsAgainst { get; set; }
-    public double pointsFor { get; set; }
+    public decimal pointsAgainst { get; set; }
+    public decimal pointsFor { get; set; }
     public int streakLength { get; set; }
     public string streakType { get; set; }
     public int ties { get; set; }
@@ -78,8 +78,8 @@ public class Overall
     public double gamesBack { get; set; }
     public int losses { get; set; }
     public double percentage { get; set; }
-    public double pointsAgainst { get; set; }
-    public double pointsFor { get; set; }
+    public decimal pointsAgainst { get; set; }
+    public decimal pointsFor { get; set; }
     public int streakLength { get; set; }
     public string streakType { get; set; }
     public int ties { get; set; }

@@ -1,10 +1,12 @@
 using EspnFantasyLeagueHistoryDataLoader.Models;
 using EspnFantasyLeagueHistoryDataLoader.Models.GetAllTeamsApiResponse;
 using EspnFantasyLeagueHistoryDataLoader.Models.LeagueHistoryApiResponse;
-using EspnFantasyLeagueHistoryDataLoader.src.Context;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Team = EspnFantasyLeagueHistoryDataLoader.Models.Team;
+using TeamModel = EspnFantasyLeagueHistoryDataLoader.Models.Team;
+using TeamDbModel = DataModels.Context.Team;
+using DataModels.Context;
 
 public class DataLoader
 {
@@ -34,11 +36,13 @@ public class DataLoader
         {
             var thisYearsStats = await GetAllTeamYearStats(year);
             // filter out bin and bri
-            thisYearsStats = thisYearsStats.Where(yt => yt.Team.PrimaryOwnerId == "{D1501A35-9B33-4FCC-BE17-2314248E1A9E}" || yt.Team.PrimaryOwnerId == "{0B7BB853-BE75-44B4-B41A-32EFCE2D42B1}").ToList();
+            thisYearsStats = thisYearsStats.Where(yt => yt.Team.PrimaryOwnerId != "{D1501A35-9B33-4FCC-BE17-2314248E1A9E}" && yt.Team.PrimaryOwnerId != "{0B7BB853-BE75-44B4-B41A-32EFCE2D42B1}").ToList();
             yearTeams.AddRange(thisYearsStats);
         }
 
         var teams = yearTeams.Select(yt => yt.Team).DistinctBy(t => t.EspnId).ToList();
+
+        await SaveData(teams, yearTeams);
 
         var test = _context.Teams.ToList();
 
@@ -73,13 +77,11 @@ public class DataLoader
             var leagueData = System.Text.Json.JsonSerializer.Deserialize<GetAllTeamsApiResponse>(content);
             return leagueData.teams.Select(t => new TeamYearStats
             {
-                Team = new Team
+                Team = new EspnFantasyLeagueHistoryDataLoader.Models.Team
                 {
                     EspnId = t.id,
                     PrimaryOwnerId = t.primaryOwner,
-                    Abbreviation = t.abbrev,
-                    Name = t.name,
-                    LogoUrl = t.logo
+                    ManagerName = leagueData.members.First(m => m.id == t.primaryOwner).firstName
                 },
                 Year = leagueData.seasonId,
                 Wins = t.record.overall.wins,
@@ -87,7 +89,6 @@ public class DataLoader
                 Ties = t.record.overall.ties,
                 PointsFor = t.record.overall.pointsFor,
                 PointsAgainst = t.record.overall.pointsAgainst,
-                DraftDayProjectedRank = t.draftDayProjectedRank,
                 PlayoffSeed = t.playoffSeed,
                 FinalRank = t.rankCalculatedFinal
             }).ToList();
@@ -99,4 +100,52 @@ public class DataLoader
 
         return new List<TeamYearStats>();
     }
+
+    private async Task SaveData(List<TeamModel> teams, List<TeamYearStats> yearTeams)
+    {
+        _logger.LogInformation("Saving data to the database...");
+
+        var teamDbModels = teams.Select(t => new TeamDbModel
+        {
+            EspnId = t.EspnId.ToString(),
+            PrimaryOwnerId = t.PrimaryOwnerId,
+            ManagerName = t.ManagerName
+        }).ToList();
+
+        var yearTeamDbModels = yearTeams.Select(yt => new DataModels.Context.TeamYearStat
+        {
+            TeamId = teamDbModels.FirstOrDefault(t => t.EspnId == yt.Team.EspnId.ToString())?.Id ?? 0,
+            Year = yt.Year,
+            Wins = yt.Wins,
+            Losses = yt.Losses,
+            Ties = yt.Ties,
+            PointsFor = yt.PointsFor,
+            PointsAgainst = yt.PointsAgainst,
+            PlayoffSeed = yt.PlayoffSeed,
+            FinalRank = yt.FinalRank
+        }).ToList();
+
+        using (var transaction = await _context.Database.BeginTransactionAsync())
+        {
+            try
+            {
+                _context.TeamYearStats.RemoveRange(_context.TeamYearStats);
+                _context.Teams.RemoveRange(_context.Teams);
+                await _context.SaveChangesAsync();
+                _context.Teams.AddRange(teamDbModels);
+                _context.TeamYearStats.AddRange(yearTeamDbModels);
+                await _context.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+            }
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
+        _logger.LogInformation("Data saved successfully.");
+    }
+
 }

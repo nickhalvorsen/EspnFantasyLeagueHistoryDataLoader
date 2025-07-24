@@ -18,4 +18,10 @@ public class Functions(ILogger<Functions> logger, DataLoader dataLoader)
         _logger.LogDebug("C# HTTP trigger function processed a request.");
         return new OkObjectResult("Welcome to Azure Functions!");
     }
+
+    // [Function("FetchData")]
+    // public async Task<IActionResult> FetchDataAsync([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
+    // {
+
+    // }
 }

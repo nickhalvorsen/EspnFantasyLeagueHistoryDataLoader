@@ -1,17 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace EspnFantasyLeagueHistoryDataLoader.src.Context;
+namespace DataModels.Context;
 
 public partial class Team
 {
-    public int Id { get; set; }
+    public long Id { get; set; }
 
     public string EspnId { get; set; } = null!;
 
-    public string? Name { get; set; }
+    public string? PrimaryOwnerId { get; set; }
 
-    public string? OwnerName { get; set; }
+    public string? ManagerName { get; set; }
 
     public virtual ICollection<TeamYearStat> TeamYearStats { get; set; } = new List<TeamYearStat>();
 }

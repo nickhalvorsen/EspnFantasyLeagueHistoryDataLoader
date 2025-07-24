@@ -1,8 +1,10 @@
-Microsoft Visual Studio Solution File, Format Version 12.00
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EspnFantasyLeagueHistoryDataLoader", "EspnFantasyLeagueHistoryDataLoader.csproj", "{BC4D65C3-272E-528E-FACC-937C2ED2986A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EspnFantasyLeagueHistoryDataLoader", "EspnFantasyLeagueHistoryDataLoader\EspnFantasyLeagueHistoryDataLoader.csproj", "{BC4D65C3-272E-528E-FACC-937C2ED2986A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataModels", "DataModels\DataModels.csproj", "{D0893954-62CE-469B-9653-25A5673BA155}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -14,6 +16,10 @@ Global
 		{BC4D65C3-272E-528E-FACC-937C2ED2986A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BC4D65C3-272E-528E-FACC-937C2ED2986A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BC4D65C3-272E-528E-FACC-937C2ED2986A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D0893954-62CE-469B-9653-25A5673BA155}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D0893954-62CE-469B-9653-25A5673BA155}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D0893954-62CE-469B-9653-25A5673BA155}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D0893954-62CE-469B-9653-25A5673BA155}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

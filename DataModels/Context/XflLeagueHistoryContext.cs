@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 
-namespace EspnFantasyLeagueHistoryDataLoader.src.Context;
+namespace DataModels.Context;
 
 public partial class XflLeagueHistoryContext : DbContext
 {
@@ -19,32 +19,29 @@ public partial class XflLeagueHistoryContext : DbContext
     {
         modelBuilder.Entity<Team>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Teams__3214EC074546E52C");
+            entity.HasKey(e => e.Id).HasName("PK__Teams__3214EC078650FDC4");
 
-            entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.EspnId)
                 .HasMaxLength(50)
                 .IsUnicode(false);
-            entity.Property(e => e.Name)
+            entity.Property(e => e.ManagerName)
                 .HasMaxLength(255)
                 .IsUnicode(false);
-            entity.Property(e => e.OwnerName)
+            entity.Property(e => e.PrimaryOwnerId)
                 .HasMaxLength(255)
                 .IsUnicode(false);
         });
 
         modelBuilder.Entity<TeamYearStat>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__TeamYear__3214EC0743B009AB");
+            entity.HasKey(e => e.Id).HasName("PK__TeamYear__3214EC07C4D83343");
 
-            entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.PointsAgainst).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.PointsFor).HasColumnType("decimal(10, 2)");
 
             entity.HasOne(d => d.Team).WithMany(p => p.TeamYearStats)
                 .HasForeignKey(d => d.TeamId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__TeamYearS__TeamI__5EBF139D");
+                .HasConstraintName("FK__TeamYearS__TeamI__0C85DE4D");
         });
 
         OnModelCreatingPartial(modelBuilder);
