@@ -19,9 +19,11 @@ public class Functions(ILogger<Functions> logger, DataLoader dataLoader)
         return new OkObjectResult("Welcome to Azure Functions!");
     }
 
-    // [Function("FetchData")]
-    // public async Task<IActionResult> FetchDataAsync([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
-    // {
+    [Function("FetchData")]
+    public async Task<IActionResult> FetchDataAsync([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
+    {
+        var data = await _dataLoader.GetAllData();
 
-    // }
+        return new OkObjectResult(data);
+    }
 }

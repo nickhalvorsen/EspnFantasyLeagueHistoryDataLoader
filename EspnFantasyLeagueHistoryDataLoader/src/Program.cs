@@ -77,7 +77,12 @@ var host = new HostBuilder()
 
         s.AddDbContext<XflLeagueHistoryContext>((options) =>
         {
-            options.UseSqlServer(context.Configuration["DatabaseConnectionString"]);
+            options.UseSqlServer(
+                context.Configuration["DatabaseConnectionString"],
+                sqlOptions =>
+                {
+                    sqlOptions.CommandTimeout(120); // Set default timeout to 120 seconds (adjust as needed)
+                });
         });
     })
     .Build();
