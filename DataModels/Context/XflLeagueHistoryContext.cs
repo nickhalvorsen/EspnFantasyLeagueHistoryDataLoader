@@ -11,12 +11,24 @@ public partial class XflLeagueHistoryContext : DbContext
     {
     }
 
+    public virtual DbSet<DataLoaderInfo> DataLoaderInfos { get; set; }
+
     public virtual DbSet<Team> Teams { get; set; }
 
     public virtual DbSet<TeamYearStat> TeamYearStats { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<DataLoaderInfo>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__DataLoad__3214EC07CCD5B1BE");
+
+            entity.ToTable("DataLoaderInfo");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.LastSuccessfulLoad).HasColumnType("datetime");
+        });
+
         modelBuilder.Entity<Team>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Teams__3214EC078650FDC4");
