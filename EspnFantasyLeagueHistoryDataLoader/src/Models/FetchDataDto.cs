@@ -7,6 +7,7 @@ public class FetchDataDto
 {
     public List<TeamDto> Teams { get; set; }
     public List<TeamYearStatDto> TeamYears { get; set; }
+    public DateTime LastSuccessfulLoad { get; set; }
 }
 
 public class TeamDto

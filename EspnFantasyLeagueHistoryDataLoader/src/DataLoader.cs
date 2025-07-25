@@ -128,7 +128,13 @@ public class DataLoader
             {
                 _context.TeamYearStats.RemoveRange(_context.TeamYearStats);
                 _context.Teams.RemoveRange(_context.Teams);
+                _context.DataLoaderInfos.RemoveRange(_context.DataLoaderInfos);
                 await _context.SaveChangesAsync();
+                _context.DataLoaderInfos.Add(new DataLoaderInfo
+                {
+                    LastSuccessfulLoad = DateTime.UtcNow,
+                    Id = 1
+                });
                 _context.Teams.AddRange(teamDbModels);
                 await _context.SaveChangesAsync();
 
@@ -165,7 +171,10 @@ public class DataLoader
                 PlayoffSeed = tys.PlayoffSeed,
                 FinalRank = tys.FinalRank,
                 TeamEspnId = tys.Team.EspnId
-            }).ToListAsync()
+            }).ToListAsync(),
+            LastSuccessfulLoad = await _context.DataLoaderInfos
+                .Select(dli => dli.LastSuccessfulLoad)
+                .SingleAsync()
         };
     }
 }
