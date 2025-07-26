@@ -13,5 +13,9 @@ public partial class Team
 
     public string? ManagerName { get; set; }
 
+    public virtual ICollection<TeamWeekStat> TeamWeekStatAwayTeamEspns { get; set; } = new List<TeamWeekStat>();
+
+    public virtual ICollection<TeamWeekStat> TeamWeekStatHomeTeamEspns { get; set; } = new List<TeamWeekStat>();
+
     public virtual ICollection<TeamYearStat> TeamYearStats { get; set; } = new List<TeamYearStat>();
 }

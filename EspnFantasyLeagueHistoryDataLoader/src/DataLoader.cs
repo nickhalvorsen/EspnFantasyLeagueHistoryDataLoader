@@ -3,9 +3,9 @@ using EspnFantasyLeagueHistoryDataLoader.Models.GetAllTeamsApiResponse;
 using EspnFantasyLeagueHistoryDataLoader.Models.LeagueHistoryApiResponse;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using TeamDbModel = DataModels.Context.Team;
 using DataModels.Context;
 using Microsoft.EntityFrameworkCore;
+using Team = DataModels.Context.Team;
 
 public class DataLoader
 {
@@ -29,19 +29,24 @@ public class DataLoader
         var years = await GetAllYears();
 
         var currentSeason = years.Max();
-        var yearTeams = new List<TeamYearStat>();
+        var teams = new List<Team>();
+        var yearlyStats = new List<TeamYearStat>();
+        var weeklyStats = new List<TeamWeekStat>();
 
         foreach (var year in years)
         {
-            var thisYearsStats = await GetAllTeamYearStats(year);
-            // filter out bin and bri
-            thisYearsStats = thisYearsStats.Where(yt => yt.Team.PrimaryOwnerId != "{D1501A35-9B33-4FCC-BE17-2314248E1A9E}" && yt.Team.PrimaryOwnerId != "{0B7BB853-BE75-44B4-B41A-32EFCE2D42B1}").ToList();
-            yearTeams.AddRange(thisYearsStats);
+            var (thisYearsYearly, thisYearsWeekly) = await GetAllTeamYearStats(year);
+            var espnTeamIdsToOmit = new List<string> { "4", "11" }; // Bin and Bri teams
+            thisYearsYearly = thisYearsYearly.Where(yt => !espnTeamIdsToOmit.Contains(yt.Team.EspnId)).ToList();
+            yearlyStats.AddRange(thisYearsYearly);
+
+            thisYearsWeekly = thisYearsWeekly.Where(yt => !espnTeamIdsToOmit.Contains(yt.AwayTeamEspnId) && !espnTeamIdsToOmit.Contains(yt.HomeTeamEspnId)).ToList();
+            weeklyStats.AddRange(thisYearsWeekly);
         }
 
-        var teams = yearTeams.Select(yt => yt.Team).DistinctBy(t => t.EspnId).ToList();
+        teams = yearlyStats.Select(yt => yt.Team).DistinctBy(t => t.EspnId).ToList();
 
-        await SaveData(teams, yearTeams);
+        await SaveData(teams, yearlyStats, weeklyStats);
 
         var test = _context.Teams.ToList();
 
@@ -65,14 +70,14 @@ public class DataLoader
         return new List<int>();
     }
 
-    private async Task<List<TeamYearStat>> GetAllTeamYearStats(int year)
+    private async Task<(List<TeamYearStat> YearStats, List<TeamWeekStat> WeekStats)> GetAllTeamYearStats(int year)
     {
-        var response = await _espnClient.GetAsync($"/apis/v3/games/ffl/seasons/{year}/segments/0/leagues/{_configuration["LEAGUE_ID"]}?view=mTeam");
+        var response = await _espnClient.GetAsync($"/apis/v3/games/ffl/seasons/{year}/segments/0/leagues/{_configuration["LEAGUE_ID"]}?view=mTeam&view=mMatchupScore");
         if (response.IsSuccessStatusCode)
         {
             var content = await response.Content.ReadAsStringAsync();
             var leagueData = System.Text.Json.JsonSerializer.Deserialize<GetAllTeamsApiResponse>(content);
-            return leagueData.teams.Select(t => new DataModels.Context.TeamYearStat
+            var yearStats = leagueData.teams.Select(t => new DataModels.Context.TeamYearStat
             {
                 Team = new DataModels.Context.Team
                 {
@@ -89,27 +94,39 @@ public class DataLoader
                 PlayoffSeed = t.playoffSeed,
                 FinalRank = t.rankCalculatedFinal
             }).ToList();
+            var weekStats = leagueData.schedule.Select(s => new TeamWeekStat
+            {
+                Year = leagueData.seasonId,
+                WeekNumber = s.matchupPeriodId,
+                AwayTeamEspnId = s.away.teamId.ToString(),
+                HomeTeamEspnId = s.home.teamId.ToString(),
+                AwayTeamScore = s.away.totalPoints,
+                HomeTeamScore = s.home.totalPoints,
+                Winner = s.winner
+            }).ToList();
+
+            return (yearStats, weekStats);
         }
         else
         {
             _logger.LogError($"Failed to retrieve teams for year {year}: {response.StatusCode}");
         }
 
-        return new List<TeamYearStat>();
+        return (new List<TeamYearStat>(), new List<TeamWeekStat>());
     }
 
-    private async Task SaveData(List<DataModels.Context.Team> teams, List<TeamYearStat> yearTeams)
+    private async Task SaveData(List<Team> teams, List<TeamYearStat> yearTeams, List<TeamWeekStat> teamWeekStats)
     {
         _logger.LogInformation("Saving data to the database...");
 
-        var teamDbModels = teams.Select(t => new TeamDbModel
+        var teamDbModels = teams.Select(t => new Team
         {
             EspnId = t.EspnId.ToString(),
             PrimaryOwnerId = t.PrimaryOwnerId,
             ManagerName = t.ManagerName,
             TeamYearStats = yearTeams
                 .Where(yt => yt.Team.EspnId == t.EspnId)
-                .Select(yt => new DataModels.Context.TeamYearStat
+                .Select(yt => new TeamYearStat
                 {
                     Year = yt.Year,
                     Wins = yt.Wins,
@@ -128,6 +145,7 @@ public class DataLoader
             {
                 _context.TeamYearStats.RemoveRange(_context.TeamYearStats);
                 _context.Teams.RemoveRange(_context.Teams);
+                _context.TeamWeekStats.RemoveRange(_context.TeamWeekStats);
                 _context.DataLoaderInfos.RemoveRange(_context.DataLoaderInfos);
                 await _context.SaveChangesAsync();
                 _context.DataLoaderInfos.Add(new DataLoaderInfo
@@ -136,6 +154,7 @@ public class DataLoader
                     Id = 1
                 });
                 _context.Teams.AddRange(teamDbModels);
+                _context.TeamWeekStats.AddRange(teamWeekStats);
                 await _context.SaveChangesAsync();
 
                 await transaction.CommitAsync();
@@ -171,6 +190,16 @@ public class DataLoader
                 PlayoffSeed = tys.PlayoffSeed,
                 FinalRank = tys.FinalRank,
                 TeamEspnId = tys.Team.EspnId
+            }).ToListAsync(),
+            TeamWeeks = await _context.TeamWeekStats.Select(tws => new TeamWeekStatDto
+            {
+                Year = tws.Year,
+                Week = tws.WeekNumber,
+                HomeTeamEspnId = tws.HomeTeamEspnId,
+                AwayTeamEspnId = tws.AwayTeamEspnId,
+                HomeTeamScore = tws.HomeTeamScore,
+                AwayTeamScore = tws.AwayTeamScore,
+                Winner = tws.Winner
             }).ToListAsync(),
             LastSuccessfulLoad = await _context.DataLoaderInfos
                 .Select(dli => dli.LastSuccessfulLoad)

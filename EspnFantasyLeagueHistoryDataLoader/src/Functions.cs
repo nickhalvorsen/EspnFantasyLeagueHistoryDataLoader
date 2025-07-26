@@ -16,10 +16,11 @@ public class Functions(ILogger<Functions> logger, DataLoader dataLoader)
         await _dataLoader.LoadAllData();
 
         _logger.LogDebug("C# HTTP trigger function processed a request.");
-        return new OkObjectResult("Welcome to Azure Functions!");
+        return new OkObjectResult("Data loaded successfully.");
     }
 
     [Function("FetchData")]
+    [ResponseCache(Duration = 60 * 60 * 8)]  // Cache for 8 hours
     public async Task<IActionResult> FetchDataAsync([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
     {
         var data = await _dataLoader.GetAllData();

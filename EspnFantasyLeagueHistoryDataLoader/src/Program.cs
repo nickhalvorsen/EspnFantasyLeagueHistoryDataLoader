@@ -84,6 +84,8 @@ var host = new HostBuilder()
                     sqlOptions.CommandTimeout(120); // Set default timeout to 120 seconds (adjust as needed)
                 });
         });
+
+        s.AddResponseCaching();
     })
     .Build();
 
